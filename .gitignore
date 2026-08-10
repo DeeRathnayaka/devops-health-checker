@@ -1,0 +1,15 @@
+# Log files
+*.log
+daily_report.log
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local environment/configuration
+.env
+.vscode/settings.json
