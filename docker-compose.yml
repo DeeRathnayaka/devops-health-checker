@@ -1,0 +1,43 @@
+services:
+
+  app:
+    build:
+      context: .
+    container_name: health-test
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: healthdb
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - health-network
+
+  postgres:
+    image: postgres:17
+    container_name: learning-postgres
+    environment:
+      POSTGRES_DB: healthdb
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d healthdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - health-network
+
+volumes:
+  postgres-data:
+    name: postgres-data
+
+networks:
+  health-network:
+    driver: bridge
