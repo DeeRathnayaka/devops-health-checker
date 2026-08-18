@@ -11,4 +11,4 @@ def test_home_endpoint():
     data = response.get_json()
 
     assert data["service"] == "devops-health-checker"
-    assert data["status"] == "BROKEN"
+    assert data["status"] == "running"
