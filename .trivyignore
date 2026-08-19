@@ -1,0 +1,5 @@
+# False positive: msgpack 1.1.2 is not installed in the image.
+GHSA-6v7p-g79w-8964
+
+# False positive: setuptools 70.3.0 is not installed in the image.
+CVE-2025-47273
