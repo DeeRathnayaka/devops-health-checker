@@ -121,6 +121,9 @@ jobs:
       - name: Load Docker image
         run: docker load -i /tmp/devops-health-checker.tar
 
+      - name: Tag Docker image for GHCR
+        run: docker tag devops-health-checker:ci ghcr.io/deerathnayaka/devops-health-checker:${{ github.sha }}
+
       - name: Verify loaded Docker image
         run: |
           docker image inspect devops-health-checker:ci
