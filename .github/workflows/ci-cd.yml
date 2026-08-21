@@ -77,4 +77,4 @@ jobs:
 
       - name: Push Docker image
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: docker push ghcr.io/deerathnayaka/devops-health-checker::${{ github.sha }}
+        run: docker push ghcr.io/deerathnayaka/devops-health-checker:${{ github.sha }}
