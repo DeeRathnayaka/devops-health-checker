@@ -40,3 +40,5 @@ def save_health_log(
                     disk_usage_percent,
                 ),
             )
+
+import definitely_not_a_real_package
