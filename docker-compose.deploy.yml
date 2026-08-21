@@ -1,7 +1,7 @@
 services:
 
   app:
-    image: ghcr.io/deerathnayaka/devops-health-checker:1bfdd2e342253001e31265f01cd42cf28ea0bdc7
+    image: ghcr.io/deerathnayaka/devops-health-checker:${IMAGE_TAG}
     container_name: health-deploy
     ports:
       - "8000:8000"

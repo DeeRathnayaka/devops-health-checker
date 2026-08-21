@@ -138,3 +138,40 @@ jobs:
 
       - name: Push Docker image
         run: docker push ghcr.io/deerathnayaka/devops-health-checker:${{ github.sha }}
+
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy application
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+          DB_USER: postgres
+          DB_PASSWORD: devpass
+        run: |
+          docker compose -f docker-compose.deploy.yml up -d
+
+      - name: Wait for application health
+        run: |
+          for i in {1..10}; do
+            if curl --fail http://localhost:8000/health; then
+              exit 0
+            fi
+            echo "Application not ready yet..."
+            sleep 5
+          done
+
+          echo "Application failed health check"
+          docker compose -f docker-compose.deploy.yml logs
+          exit 1
