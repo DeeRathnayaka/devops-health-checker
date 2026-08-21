@@ -1,0 +1,43 @@
+services:
+
+  app:
+    image: ghcr.io/deerathnayaka/devops-health-checker:1bfdd2e342253001e31265f01cd42cf28ea0bdc7
+    container_name: health-deploy
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: healthdb
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - health-network
+
+  postgres:
+    image: postgres:17
+    container_name: deploy-postgres
+    environment:
+      POSTGRES_DB: healthdb
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - deploy-postgres-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d healthdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - health-network
+
+volumes:
+  deploy-postgres-data:
+
+networks:
+  health-network:
+    driver: bridge
