@@ -20,8 +20,7 @@ def save_health_log(
     memory_available_mb,
     disk_usage_percent,
 ):
-    with get_connection() as conn:
-        with conn.cursor() as cur:
+    with get_connection() as conn, conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO health_logs (

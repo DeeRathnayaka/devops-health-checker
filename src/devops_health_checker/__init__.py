@@ -1,6 +1,7 @@
-from flask import Flask, jsonify
 import shutil
 import time
+
+from flask import Flask, jsonify
 
 from .database import save_health_log
 
