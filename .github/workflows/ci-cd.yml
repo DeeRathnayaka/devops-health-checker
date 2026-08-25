@@ -14,7 +14,7 @@ permissions:
   packages: write
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,37 +35,8 @@ jobs:
       - name: Run Ruff
         run: uv run ruff check .
 
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: ".python-version"
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
-
-      - name: Install dependencies
-        run: uv sync --locked
-
       - name: Run tests
         run: uv run pytest
-
-  build:
-    needs:
-      - lint
-      - test
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -96,40 +67,8 @@ jobs:
           severity: 'CRITICAL,HIGH'
           trivyignores: .trivyignore
 
-      - name: Save Docker image
-        run: docker save devops-health-checker:ci -o /tmp/devops-health-checker.tar
-
-      - name: Upload Docker image artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: devops-health-checker-image
-          path: /tmp/devops-health-checker.tar
-
-  publish:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download Docker image artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: devops-health-checker-image
-          path: /tmp
-
-      - name: Load Docker image
-        run: docker load -i /tmp/devops-health-checker.tar
-
-      - name: Tag Docker image for GHCR
-        run: docker tag devops-health-checker:ci ghcr.io/deerathnayaka/devops-health-checker:${{ github.sha }}
-
-      - name: Verify loaded Docker image
-        run: |
-          docker image inspect devops-health-checker:ci
-          docker image inspect ghcr.io/deerathnayaka/devops-health-checker:${{ github.sha }}
-
       - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -137,41 +76,5 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: docker push ghcr.io/deerathnayaka/devops-health-checker:${{ github.sha }}
-
-  deploy:
-    needs: publish
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Deploy application
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-          DB_USER: postgres
-          DB_PASSWORD: devpass
-        run: |
-          docker compose -f docker-compose.deploy.yml up -d
-
-      - name: Wait for application health
-        run: |
-          for i in {1..10}; do
-            if curl --fail http://localhost:8000/health; then
-              exit 0
-            fi
-            echo "Application not ready yet..."
-            sleep 5
-          done
-
-          echo "Application failed health check"
-          docker compose -f docker-compose.deploy.yml logs
-          exit 1
